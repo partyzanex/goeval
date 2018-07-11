@@ -128,7 +128,16 @@ func (scope *Scope) Interpret(expr ast.Node) (interface{}, error) {
 			rVal = rVal.Elem()
 		}
 		if field := rVal.FieldByName(sel.Name); field.IsValid() {
-			return field.Interface(), nil
+			switch field.Kind() {
+			case reflect.String:
+				return field.String(), nil
+			case reflect.Int:
+				return int(field.Int()), nil
+			case reflect.Struct:
+				return nil, fmt.Errorf("struct is unsupported")
+			default:
+				return field.Interface(), nil
+			}
 		}
 		return nil, fmt.Errorf("unknown field %#v", sel.Name)
 
@@ -174,7 +183,7 @@ func (scope *Scope) Interpret(expr ast.Node) (interface{}, error) {
 		case token.CHAR:
 			return (rune)(e.Value[1]), nil
 		case token.STRING:
-			return e.Value[1 : len(e.Value)-1], nil
+			return e.Value[1: len(e.Value)-1], nil
 		default:
 			return nil, fmt.Errorf("unknown basic literal %d", e.Kind)
 		}
